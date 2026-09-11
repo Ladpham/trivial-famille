@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trivial du week-end</title>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#1e293b; --card:#f8fafc; --ink:#0f172a; --muted:#64748b;
+    --teamA:#2563eb; --teamB:#e11d48;
+    --hist:#f59e0b; --geo:#3b82f6; --jardin:#22c55e; --cine:#ec4899; --sport:#f97316; --random:#8b5cf6;
+    --ok:#16a34a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 800px at 20% -10%,#1e3a8a 0%,var(--bg) 55%);color:#e2e8f0;line-height:1.4}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
+  h1{font-size:clamp(28px,5vw,54px);margin:0 0 6px;letter-spacing:-.02em}
+  h2{font-size:clamp(20px,3vw,30px);margin:0 0 12px}
+  p{margin:0 0 10px}
+  .muted{color:#94a3b8}
+  button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:14px 22px;font-size:clamp(16px,2vw,20px);font-weight:700;transition:transform .08s,filter .15s;color:#fff;background:#334155}
+  button:hover{filter:brightness(1.1)} button:active{transform:scale(.97)}
+  button.primary{background:#fbbf24;color:#1f1300}
+  button.ghost{background:transparent;border:2px solid #475569;color:#cbd5e1}
+  button.teamA{background:var(--teamA)} button.teamB{background:var(--teamB)}
+  button.none{background:#475569}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .grow{flex:1}
+
+  /* scoreboard */
+  .scorebar{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-bottom:18px}
+  .team{border-radius:18px;padding:12px 18px;background:var(--bg2);display:flex;align-items:center;gap:14px;border:3px solid transparent}
+  .team.A{border-color:var(--teamA)} .team.B{border-color:var(--teamB);flex-direction:row-reverse;text-align:right}
+  .team .name{font-weight:800;font-size:clamp(16px,2.2vw,24px);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .team .pts{font-size:clamp(30px,5vw,54px);font-weight:900;line-height:1}
+  .wedges{display:flex;gap:4px;margin-top:4px}
+  .team.B .wedges{justify-content:flex-end}
+  .wedge{width:14px;height:14px;border-radius:50%;background:#334155;opacity:.35}
+  .wedge.on{opacity:1}
+  .progress{display:flex;flex-direction:column;justify-content:center;align-items:center;font-weight:800;color:#94a3b8;font-size:clamp(14px,1.6vw,18px);padding:0 8px;white-space:nowrap}
+  .progress b{color:#fff;font-size:clamp(18px,2.4vw,26px)}
+
+  /* card */
+  .card{background:var(--card);color:var(--ink);border-radius:26px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+  .hero{position:relative;min-height:230px;display:flex;align-items:center;justify-content:center;gap:18px;padding:28px;overflow:hidden}
+  .hero .emo{font-size:clamp(70px,12vw,130px);line-height:1;filter:drop-shadow(0 12px 20px rgba(0,0,0,.25));animation:pop .5s ease}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .hero::before{content:"";position:absolute;inset:-40%;background:repeating-linear-gradient(45deg,rgba(255,255,255,.08) 0 18px,transparent 18px 36px)}
+  .badge{position:absolute;top:16px;left:16px;background:rgba(0,0,0,.35);color:#fff;font-weight:800;padding:8px 14px;border-radius:999px;font-size:clamp(13px,1.6vw,17px);letter-spacing:.04em;text-transform:uppercase;backdrop-filter:blur(4px)}
+  .stake{position:absolute;top:16px;right:16px;background:#fff;color:#111;font-weight:900;padding:8px 14px;border-radius:999px;font-size:clamp(13px,1.6vw,17px)}
+  .body{padding:26px 30px 30px}
+  .q{font-size:clamp(22px,3.2vw,36px);font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
+  .hint{font-size:clamp(14px,1.7vw,18px);color:var(--muted);margin-bottom:16px}
+  .answer{background:#ecfdf5;border:2px solid #16a34a;border-radius:16px;padding:16px 20px;margin:12px 0 16px;animation:pop .35s ease}
+  .answer .a{font-size:clamp(22px,3vw,34px);font-weight:900;color:#065f46}
+  .answer .n{font-size:clamp(14px,1.7vw,18px);color:#334155;margin-top:6px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 16px}
+  @media(max-width:640px){.choices{grid-template-columns:1fr}}
+  .choice{background:#f1f5f9;border:3px solid #e2e8f0;border-radius:16px;padding:16px 18px;font-size:clamp(18px,2.4vw,26px);font-weight:700;display:flex;gap:12px;align-items:center;animation:pop .35s ease}
+  .choice .k{width:38px;height:38px;border-radius:10px;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex:none}
+  .choice.good{background:#dcfce7;border-color:#16a34a}
+  .choice.good .k{background:#16a34a}
+  .choice.bad{opacity:.4}
+  .attr{border-top:2px dashed #e2e8f0;padding-top:16px;margin-top:6px}
+  .attr .lab{font-weight:800;color:var(--muted);margin-bottom:10px;text-transform:uppercase;font-size:14px;letter-spacing:.06em}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#fff;color:#111;font-weight:800;padding:12px 20px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1}
+
+  /* intro */
+  .intro .card{padding:30px}
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:18px 0 24px}
+  .rule{background:#f1f5f9;border-radius:16px;padding:16px}
+  .rule .ic{font-size:34px;margin-bottom:6px}
+  .rule b{display:block;font-size:18px;margin-bottom:4px}
+  .rule p{color:#475569;font-size:15px}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+  @media(max-width:640px){.teams{grid-template-columns:1fr}}
+  .tin{border-radius:16px;padding:16px;border:3px solid}
+  .tin.A{border-color:var(--teamA)} .tin.B{border-color:var(--teamB)}
+  .tin label{display:block;font-weight:800;margin-bottom:8px}
+  .tin input{width:100%;font:inherit;font-size:20px;padding:12px 14px;border-radius:12px;border:2px solid #cbd5e1}
+  .cats{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
+  .cat{padding:6px 12px;border-radius:999px;color:#fff;font-weight:800;font-size:14px}
+  .footer{margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#64748b;font-size:14px}
+
+  /* end */
+  .end .card{padding:34px;text-align:center}
+  .winner{font-size:clamp(28px,5vw,56px);font-weight:900;margin:8px 0 18px}
+  .recap{text-align:left;margin:22px auto 0;max-width:720px;border-top:2px dashed #e2e8f0;padding-top:14px}
+  .recap div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:16px}
+  .recap .who{font-weight:800;white-space:nowrap}
+  .who.A{color:var(--teamA)} .who.B{color:var(--teamB)} .who.none{color:#94a3b8}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+  .topbar .t{font-weight:900;font-size:18px;color:#cbd5e1}
+  .small{font-size:14px;padding:8px 14px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- DONNÉES ----------
+const CATS = {
+  hist:   {label:"Histoire de France", color:"var(--hist)",   grad:"linear-gradient(135deg,#f59e0b,#b45309)"},
+  geofr:  {label:"Géographie française", color:"var(--geo)",  grad:"linear-gradient(135deg,#60a5fa,#1d4ed8)"},
+  geoint: {label:"Géographie du monde", color:"var(--geo)",   grad:"linear-gradient(135deg,#38bdf8,#0369a1)"},
+  jardin: {label:"Côté jardin", color:"var(--jardin)",        grad:"linear-gradient(135deg,#4ade80,#15803d)"},
+  cine:   {label:"Cinéma", color:"var(--cine)",               grad:"linear-gradient(135deg,#f472b6,#be185d)"},
+  sport:  {label:"Sport", color:"var(--sport)",               grad:"linear-gradient(135deg,#fb923c,#c2410c)"},
+  random: {label:"Random", color:"var(--random)",             grad:"linear-gradient(135deg,#a78bfa,#6d28d9)"},
+};
+const WEDGE_CATS = ["hist","geofr","geoint","jardin","cine","sport","random"];
+
+// Chaque question : emo (image), q, a (réponse ouverte), choices (4, la bonne = index good), note (anecdote)
+const QUESTIONS = [
+  {cat:"hist", sub:"Date", emo:["⚔️","🏰"], q:"En quelle année Philippe le Bel fait-il arrêter, au petit matin d'un vendredi 13 octobre, tous les Templiers du royaume ?",
+   a:"1307", choices:["1291","1307","1314","1328"], good:1,
+   note:"Le vendredi 13 octobre 1307. Le grand maître Jacques de Molay sera brûlé sept ans plus tard, en 1314, sur l'île aux Juifs à Paris."},
+  {cat:"hist", sub:"Personnage", emo:["🎩","🏛️"], q:"Qui fut le premier président de la IIIe République, élu en 1871 ?",
+   a:"Adolphe Thiers", choices:["Léon Gambetta","Jules Grévy","Adolphe Thiers","Patrice de Mac Mahon"], good:2,
+   note:"Chef du pouvoir exécutif en février 1871, il reçoit le titre de président de la République par la loi Rivet du 31 août 1871. Mac Mahon lui succède en 1873."},
+  {cat:"hist", sub:"Événement", emo:["👑","📜"], q:"Quel traité de 843 partage l'empire carolingien entre les trois petits-fils de Charlemagne ?",
+   a:"Le traité de Verdun", choices:["Le traité d'Aix-la-Chapelle","Le traité de Verdun","Le traité de Meerssen","Le traité de Coulaines"], good:1,
+   note:"Charles le Chauve reçoit la Francie occidentale (future France), Louis le Germanique la Francie orientale, Lothaire la Francie médiane et le titre impérial."},
+  {cat:"geofr", sub:"Département", emo:["🏔️","💧"], q:"Quelle est la préfecture des Alpes-de-Haute-Provence (04) ?",
+   a:"Digne-les-Bains", choices:["Manosque","Sisteron","Gap","Digne-les-Bains"], good:3,
+   note:"Manosque est pourtant la ville la plus peuplée du département. Gap est la préfecture des Hautes-Alpes. Le département s'appelait Basses-Alpes jusqu'en 1970."},
+  {cat:"geofr", sub:"Cours d'eau", emo:["🌊","🦆"], q:"Quel est le plus long affluent de la Loire, avec environ 420 km ?",
+   a:"L'Allier", choices:["Le Cher","L'Allier","La Vienne","La Sarthe"], good:1,
+   note:"Il naît en Lozère au Moure de la Gardille et rejoint la Loire au Bec d'Allier, près de Nevers. Le Cher fait 368 km, la Vienne 363 km."},
+  {cat:"geoint", sub:"Capitale", emo:["🌍","🕌"], q:"De quel pays Achgabat est-elle la capitale ?",
+   a:"Le Turkménistan", choices:["Le Kirghizistan","Le Tadjikistan","Le Turkménistan","L'Ouzbékistan"], good:2,
+   note:"Ville reconstruite en marbre blanc, elle détient le record Guinness de la plus forte concentration de bâtiments en marbre blanc au monde."},
+  {cat:"jardin", sub:"Insecte", emo:["🪲","🌳"], q:"Le grillon chante en frottant ses élytres. Comment la cigale mâle produit-elle, elle, son chant ?",
+   a:"En faisant vibrer des membranes de son abdomen (les cymbales)", choices:["En frottant ses pattes arrière contre ses ailes","En faisant vibrer des membranes de son abdomen","En expulsant de l'air par ses stigmates","En claquant ses mandibules"], good:1,
+   note:"Ces membranes, les cymbales ou tymbales, se déforment plusieurs centaines de fois par seconde. Seul le mâle chante. La larve vit sous terre plusieurs années avant l'été où elle sort."},
+  {cat:"jardin", sub:"Fleur", emo:["🌸","🧡"], q:"De quelle fleur récolte-t-on les stigmates pour produire le safran ?",
+   a:"Le crocus (Crocus sativus)", choices:["Le lys","Le colchique","L'iris","Le crocus"], good:3,
+   note:"Trois stigmates par fleur, environ 150 000 fleurs pour un kilo de safran, cueillies à la main en octobre. Attention au colchique, son sosie, qui est toxique."},
+  {cat:"cine", sub:"Cannes", emo:["🎬","🌴"], q:"Quel film a reçu la toute première Palme d'or de l'histoire du Festival de Cannes, en 1955 ?",
+   a:"Marty (Delbert Mann)", choices:["Le Salaire de la peur","Marty","Sur les quais","La Dolce Vita"], good:1,
+   note:"Avant 1955, la récompense suprême s'appelait le Grand Prix. Marty, avec Ernest Borgnine, est l'un des très rares films à cumuler Palme d'or et Oscar du meilleur film, comme Parasite en 2019."},
+  {cat:"cine", sub:"César", emo:["🏆","🎭"], q:"Quelle actrice détient le record de César de la meilleure actrice, avec cinq trophées ?",
+   a:"Isabelle Adjani", choices:["Catherine Deneuve","Isabelle Huppert","Isabelle Adjani","Juliette Binoche"], good:2,
+   note:"Possession (1982), L'Été meurtrier (1984), Camille Claudel (1989), La Reine Margot (1995), La Journée de la jupe (2010). Deneuve et Huppert en ont deux, Binoche un."},
+  {cat:"sport", sub:"Football", emo:["⚽","🇫🇷"], q:"Quel Français détient toujours le record de buts marqués dans une seule Coupe du monde, avec 13 buts en 1958 ?",
+   a:"Just Fontaine", choices:["Raymond Kopa","Roger Piantoni","Thierry Henry","Just Fontaine"], good:3,
+   note:"13 buts en 6 matchs, dont 4 contre l'Allemagne pour la 3e place. Le record n'a jamais été approché : Kocsis 11 en 1954, Gerd Müller 10 en 1970."},
+  {cat:"sport", sub:"Rugby", emo:["🏉","🇮🇹"], q:"Dans le Tournoi des Six Nations, quel trophée se disputent la France et l'Italie ?",
+   a:"Le trophée Giuseppe-Garibaldi", choices:["La Calcutta Cup","Le trophée Giuseppe-Garibaldi","Le Millennium Trophy","La Centenary Quaich"], good:1,
+   note:"Créé en 2007 pour le bicentenaire de la naissance de Garibaldi, né à Nice, et dessiné par Jean-Pierre Rives. Calcutta Cup = Angleterre-Écosse, Millennium Trophy = Angleterre-Irlande, Centenary Quaich = Irlande-Écosse."},
+  {cat:"random", sub:"Typographie", emo:["🔣","✍️"], q:"Comment s'appelle le signe typographique « & » ?",
+   a:"L'esperluette", choices:["L'obèle","Le pied-de-mouche","L'esperluette","L'octothorpe"], good:2,
+   note:"C'est une ligature du latin « et ». L'obèle est le †, le pied-de-mouche le ¶ et l'octothorpe le #. En anglais, le & a longtemps été récité comme 27e lettre de l'alphabet."},
+  {cat:"random", sub:"Jeux", emo:["🔠","🎲"], q:"Combien de cases compte un plateau de Scrabble ?",
+   a:"225 cases (15 × 15)", choices:["169","225","256","289"], good:1,
+   note:"15 lignes sur 15 colonnes, dont 61 cases à prime. Le jeu a été inventé en 1938 par l'architecte américain Alfred Butts, au chômage pendant la Grande Dépression."},
+];
+
+const TIEBREAK = {cat:"sport", sub:"Gymnastique (subsidiaire)", emo:["🤸","🥇"], q:"Combien d'agrès compte la gymnastique artistique masculine aux Jeux olympiques ?",
+   a:"Six agrès", choices:["4","5","6","8"], good:2,
+   note:"Sol, cheval d'arçons, anneaux, saut, barres parallèles, barre fixe. Les femmes en ont quatre : saut, barres asymétriques, poutre, sol."};
+
+const PTS_OPEN = 2, PTS_MCQ = 1;
+
+// ---------- ÉTAT ----------
+const KEY = "trivial-weekend-v1";
+let S = load() || fresh();
+function fresh(){ return {screen:"intro", names:{A:"Équipe A",B:"Équipe B"}, i:0, phase:"open", results:[], tie:false}; }
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); return s && s.screen ? s : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+function score(t){ return S.results.reduce((n,r)=> n + (r.team===t ? r.pts : 0), 0); }
+function wedges(t){ const set = new Set(); S.results.forEach((r,k)=>{ if(r.team===t && k<QUESTIONS.length) set.add(QUESTIONS[k].cat); }); return set; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800); }
+
+// ---------- RENDU ----------
+const app = document.getElementById("app");
+function render(){ save(); if(S.screen==="intro") renderIntro(); else if(S.screen==="play") renderPlay(); else renderEnd(); window.scrollTo({top:0}); }
+
+function renderIntro(){
+  app.className = "intro";
+  const cats = Object.entries(CATS).map(([k,c])=>`<span class="cat" style="background:${c.color}">${c.label}</span>`).join("");
+  app.innerHTML = `
+    <h1>🧀 Trivial du week-end</h1>
+    <p class="muted" style="font-size:18px;margin-bottom:18px">14 questions, 2 équipes, niveau relevé. Personne ne connaît les réponses à l'avance, pas même le maître du jeu.</p>
+    <div class="card">
+      <h2>Comment ça marche</h2>
+      <div class="rules">
+        <div class="rule"><div class="ic">1️⃣</div><b>Réponse ouverte : ${PTS_OPEN} points</b><p>La question s'affiche. Si une équipe est sûre d'elle, elle annonce sa réponse à voix haute, puis on dévoile la solution. Juste : ${PTS_OPEN} pts. Faux : 0 et la question est perdue pour elle.</p></div>
+        <div class="rule"><div class="ic">2️⃣</div><b>Personne ne sait : QCM à ${PTS_MCQ} point</b><p>On dévoile 4 propositions. Chaque équipe en choisit une (l'équipe qui s'est trompée en ouvert ne joue pas). On révèle la bonne, on attribue le point.</p></div>
+        <div class="rule"><div class="ic">3️⃣</div><b>Attribution</b><p>Après chaque révélation, le maître du jeu attribue la question à l'équipe A, à l'équipe B ou à personne. Un bouton « Corriger » permet d'annuler.</p></div>
+        <div class="rule"><div class="ic">🤸</div><b>Égalité</b><p>Une question subsidiaire de gymnastique départage les équipes. Les scores sont sauvegardés dans le navigateur : on peut fermer et reprendre.</p></div>
+      </div>
+      <h2>Les catégories</h2>
+      <div class="cats">${cats}</div>
+      <p class="muted" style="color:#475569;margin-bottom:22px">3 histoire de France · 2 géographie française · 1 géographie du monde · 2 côté jardin · 2 cinéma · 2 sport · 2 random</p>
+      <h2>Qui est qui ?</h2>
+      <div class="teams">
+        <div class="tin A"><label>Équipe A (bleu)</label><input id="nA" value="${esc(S.names.A)}" placeholder="Nom de l'équipe A"></div>
+        <div class="tin B"><label>Équipe B (rouge)</label><input id="nB" value="${esc(S.names.B)}" placeholder="Nom de l'équipe B"></div>
+      </div>
+      <div class="row">
+        <button class="primary" id="start">C'est parti 🎲</button>
+        ${S.results.length ? `<button class="ghost" id="resume">Reprendre la partie en cours (question ${Math.min(S.i+1,QUESTIONS.length)})</button>` : ""}
+      </div>
+    </div>`;
+  const readNames = ()=>{ S.names.A = document.getElementById("nA").value.trim() || "Équipe A"; S.names.B = document.getElementById("nB").value.trim() || "Équipe B"; };
+  document.getElementById("start").onclick = ()=>{ readNames(); S.i=0; S.phase="open"; S.results=[]; S.tie=false; S.screen="play"; render(); };
+  const r = document.getElementById("resume"); if(r) r.onclick = ()=>{ readNames(); S.screen = S.i>=QUESTIONS.length && !S.tie ? "end" : "play"; render(); };
+}
+
+function scorebar(){
+  const w = t => WEDGE_CATS.map(c=>`<span class="wedge ${wedges(t).has(c)?"on":""}" style="background:${CATS[c].color}" title="${CATS[c].label}"></span>`).join("");
+  const label = S.screen==="end" ? "Fin de partie" : S.tie ? "Subsidiaire" : `Question <b>${S.i+1}</b> / ${QUESTIONS.length}`;
+  return `<div class="scorebar">
+    <div class="team A"><div class="pts">${score("A")}</div><div class="grow"><div class="name">${esc(S.names.A)}</div><div class="wedges">${w("A")}</div></div></div>
+    <div class="progress">${label}</div>
+    <div class="team B"><div class="pts">${score("B")}</div><div class="grow"><div class="name">${esc(S.names.B)}</div><div class="wedges">${w("B")}</div></div></div>
+  </div>`;
+}
+
+function renderPlay(){
+  app.className = "play";
+  const Q = S.tie ? TIEBREAK : QUESTIONS[S.i];
+  const C = CATS[Q.cat];
+  const ph = S.phase;
+  const stake = (ph==="open"||ph==="open-revealed") ? PTS_OPEN : PTS_MCQ;
+  let body = `<div class="q">${esc(Q.q)}</div>`;
+
+  if(ph==="open"){
+    body += `<div class="hint">Une équipe est sûre d'elle ? Elle annonce sa réponse, puis on dévoile. Sinon, on passe aux 4 propositions.</div>
+      <div class="row"><button class="primary" data-act="reveal-open">Dévoiler la réponse (${PTS_OPEN} pts)</button><button data-act="mcq">Personne ne sait → 4 propositions (${PTS_MCQ} pt)</button></div>`;
+  }
+  if(ph==="open-revealed"){
+    body += answerBox(Q) + attribution(PTS_OPEN, "Qui avait la bonne réponse ?") + `<div class="row" style="margin-top:12px"><button class="ghost small" data-act="mcq">Réponse fausse → passer au QCM pour l'autre équipe</button></div>`;
+  }
+  if(ph==="mcq"){
+    body += `<div class="hint">Chaque équipe choisit une lettre. Puis on révèle.</div>` + choices(Q,false) + `<div class="row"><button class="primary" data-act="reveal-mcq">Révéler la bonne réponse</button></div>`;
+  }
+  if(ph==="mcq-revealed"){
+    body += choices(Q,true) + answerBox(Q) + attribution(PTS_MCQ, "Qui avait choisi la bonne lettre ?");
+  }
+
+  app.innerHTML = `
+    <div class="topbar"><div class="t">🧀 Trivial du week-end</div><div class="row"><button class="ghost small" data-act="undo" ${S.results.length?"":"disabled"}>↩︎ Corriger la dernière attribution</button><button class="ghost small" data-act="home">Accueil</button></div></div>
+    ${scorebar()}
+    <div class="card">
+      <div class="hero" style="background:${C.grad}"><span class="badge">${C.label} · ${esc(Q.sub)}</span><span class="stake">${stake} pt${stake>1?"s":""}</span>${Q.emo.map(e=>`<span class="emo">${e}</span>`).join("")}</div>
+      <div class="body">${body}</div>
+    </div>`;
+  app.querySelectorAll("[data-act]").forEach(b=> b.onclick = ()=> act(b.dataset.act, b.dataset.team));
+}
+
+function answerBox(Q){ return `<div class="answer"><div class="a">✅ ${esc(Q.a)}</div><div class="n">${esc(Q.note)}</div></div>`; }
+function choices(Q, revealed){
+  return `<div class="choices">${Q.choices.map((c,k)=>`<div class="choice ${revealed ? (k===Q.good?"good":"bad") : ""}"><span class="k">${"ABCD"[k]}</span><span>${esc(c)}</span></div>`).join("")}</div>`;
+}
+function attribution(pts, label){
+  return `<div class="attr"><div class="lab">${label} · ${pts} pt${pts>1?"s":""}</div>
+    <div class="row"><button class="teamA" data-act="give" data-team="A">${esc(S.names.A)}</button><button class="teamB" data-act="give" data-team="B">${esc(S.names.B)}</button><button class="none" data-act="give" data-team="none">Personne</button></div></div>`;
+}
+
+function act(a, team){
+  if(a==="home"){ S.screen="intro"; render(); return; }
+  if(a==="reveal-open"){ S.phase="open-revealed"; render(); return; }
+  if(a==="mcq"){ S.phase="mcq"; render(); return; }
+  if(a==="reveal-mcq"){ S.phase="mcq-revealed"; render(); return; }
+  if(a==="undo"){
+    const last = S.results.pop();
+    if(last){ if(last.tie){ S.tie=true; } else { S.tie=false; S.i = last.i; } S.phase="open"; S.screen="play"; toast("Attribution annulée"); render(); }
+    return;
+  }
+  if(a==="give"){
+    const pts = S.phase==="open-revealed" ? PTS_OPEN : PTS_MCQ;
+    S.results.push({i:S.i, tie:S.tie, team, pts: team==="none"?0:pts});
+    toast(team==="none" ? "Personne ne marque" : `+${pts} pour ${S.names[team]}`);
+    if(S.tie){ S.tie=false; S.screen="end"; render(); return; }
+    S.i++; S.phase="open";
+    if(S.i>=QUESTIONS.length){ S.screen="end"; }
+    render();
+  }
+}
+
+function renderEnd(){
+  app.className = "end";
+  const a=score("A"), b=score("B");
+  const tieResult = S.results.find(r=>r.tie);
+  let head;
+  if(a===b && !tieResult){
+    head = `<div class="winner">🤝 Égalité ${a} à ${b}</div><p style="color:#475569;font-size:18px">Une question subsidiaire de gymnastique pour départager.</p><div class="row" style="justify-content:center;margin-top:16px"><button class="primary" id="tb">Question subsidiaire 🤸</button></div>`;
+  } else {
+    let win = a>b ? "A" : b>a ? "B" : (tieResult && tieResult.team!=="none" ? tieResult.team : null);
+    head = win
+      ? `<div class="winner" style="color:var(--team${win})">🏆 ${esc(S.names[win])} l'emporte !</div><p style="font-size:22px;font-weight:800">${a} · ${b}</p>${tieResult&&a===b?`<p style="color:#475569">Départagés sur la question subsidiaire.</p>`:""}`
+      : `<div class="winner">🤝 Égalité parfaite, même sur la subsidiaire</div><p style="font-size:22px;font-weight:800">${a} · ${b}</p><p style="color:#475569">Le maître du jeu tranche. Ou on remet le couvert.</p>`;
+  }
+  const recap = S.results.map(r=>{ const Q = r.tie ? TIEBREAK : QUESTIONS[r.i]; const who = r.team==="none" ? "Personne" : `${esc(S.names[r.team])} +${r.pts}`; return `<div><span>${r.tie?"★ Subsidiaire":(r.i+1)+"."} ${esc(CATS[Q.cat].label)} · ${esc(Q.a)}</span><span class="who ${r.team}">${who}</span></div>`; }).join("");
+  app.innerHTML = `
+    ${scorebar()}
+    <div class="card">
+      <h2>Fin de partie</h2>
+      ${head}
+      <div class="recap">${recap}</div>
+      <div class="row" style="justify-content:center;margin-top:22px"><button class="ghost" id="undo">↩︎ Corriger la dernière attribution</button><button id="again">Nouvelle partie</button></div>
+    </div>`;
+  const tb = document.getElementById("tb"); if(tb) tb.onclick = ()=>{ S.tie=true; S.phase="open"; S.screen="play"; render(); };
+  document.getElementById("again").onclick = ()=>{ if(confirm("Effacer les scores et recommencer ?")){ const n=S.names; S=fresh(); S.names=n; render(); } };
+  document.getElementById("undo").onclick = ()=> act("undo");
+}
+
+// raccourcis clavier : Entrée = bouton principal, A / B / N = attribution, flèche gauche = corriger
+document.addEventListener("keydown", e=>{
+  if(e.target.tagName==="INPUT") return;
+  const k = e.key.toLowerCase();
+  if(k==="enter"){ const b=document.querySelector("button.primary"); if(b) b.click(); }
+  if(S.screen==="play" && (S.phase==="open-revealed"||S.phase==="mcq-revealed")){
+    if(k==="a") act("give","A"); if(k==="b") act("give","B"); if(k==="n") act("give","none");
+  }
+  if(k==="arrowleft") act("undo");
+});
+
+render();
+</script>
+</body>
+</html>
