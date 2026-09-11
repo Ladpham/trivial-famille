@@ -95,6 +95,38 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
   .topbar .t{font-weight:900;font-size:18px;color:#cbd5e1}
   .small{font-size:14px;padding:8px 14px;border-radius:10px}
+
+  /* curseurs */
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:6px 0 18px}
+  @media(max-width:720px){.sliders{grid-template-columns:1fr}}
+  .sl{border:3px solid;border-radius:18px;padding:16px;background:#fff}
+  .sl.A{border-color:var(--teamA)} .sl.B{border-color:var(--teamB)}
+  .sl .h{font-weight:900;font-size:18px;margin-bottom:4px}
+  .sl.A .h{color:var(--teamA)} .sl.B .h{color:var(--teamB)}
+  .sl .vv{font-size:clamp(36px,5vw,58px);font-weight:900;text-align:center;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+  .sl input[type=range]{width:100%;height:36px}
+  .sl.A input[type=range]{accent-color:var(--teamA)} .sl.B input[type=range]{accent-color:var(--teamB)}
+  .steps{display:flex;gap:6px;justify-content:center;align-items:center;margin:8px 0 12px;flex-wrap:wrap}
+  .stepb{padding:8px 12px;font-size:16px;border-radius:10px;background:#e2e8f0;color:#0f172a}
+  .steps input[type=number]{width:110px;font:inherit;font-size:18px;padding:8px;border-radius:10px;border:2px solid #cbd5e1;text-align:center}
+  .sl .lockb{width:100%}
+  .sl.A .lockb{background:var(--teamA)} .sl.B .lockb{background:var(--teamB)}
+  .sl.locked{background:#f8fafc}
+  .sl.locked .vv{font-size:48px}
+  .axis{position:relative;height:120px;margin:10px 44px 8px}
+  .axis .track{position:absolute;top:50%;left:0;right:0;height:10px;border-radius:5px;background:#e2e8f0;transform:translateY(-50%)}
+  .axis .mk{position:absolute;top:50%;width:24px;height:24px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);transform:translate(-50%,-50%);animation:pop .4s ease}
+  .axis .mk.A{background:var(--teamA)} .axis .mk.B{background:var(--teamB)}
+  .axis .mk span{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:900;font-size:16px}
+  .axis .mk.A span{bottom:30px;color:var(--teamA)} .axis .mk.B span{top:30px;color:var(--teamB)}
+  .axis .mk.ans{width:8px;height:84px;border-radius:4px;background:#16a34a;border:0;z-index:2}
+  .gaps{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 10px}
+  .gap{border-radius:14px;padding:10px 14px;font-weight:800;font-size:clamp(15px,1.9vw,19px);background:#f1f5f9}
+  .gap.A{color:var(--teamA)} .gap.B{color:var(--teamB)}
+  .gap.win{outline:3px solid #16a34a;background:#dcfce7}
+  .verdict{font-size:clamp(20px,2.8vw,30px);font-weight:900;margin:8px 0 4px}
+  .testbanner{background:#fef3c7;border:2px solid #f59e0b;color:#78350f;border-radius:14px;padding:10px 14px;font-weight:700;margin-bottom:14px;font-size:clamp(14px,1.7vw,17px)}
+  .who.both{color:#7c3aed}
 </style>
 </head>
 <body>
@@ -102,6 +134,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
 // ---------- DONNÉES ----------
 const CATS = {
   hist:   {label:"Histoire de France", color:"var(--hist)",   grad:"linear-gradient(135deg,#f59e0b,#b45309)"},
@@ -114,11 +147,21 @@ const CATS = {
 };
 const WEDGE_CATS = ["hist","geofr","geoint","jardin","cine","sport","random"];
 
-// Chaque question : emo (image), q, a (réponse ouverte), choices (4, la bonne = index good), note (anecdote)
+// Chaque question : emo (image), q, et soit (a texte + choices + good) soit (num + a nombre). note = anecdote.
+// ÉCHAUFFEMENT : 2 questions test qui ne comptent pas
+const WARMUP = [
+  {cat:"sport", sub:"Test chiffré", emo:["🚴","🟡"], q:"En quelle année a été couru le tout premier Tour de France ?",
+   num:{min:1850,max:1970,step:1,unit:""}, a:1903,
+   note:"Organisé par le journal L'Auto d'Henri Desgrange pour doper ses ventes. 6 étapes, 2 428 km, remporté par Maurice Garin."},
+  {cat:"geofr", sub:"Test réponse", emo:["🧱","🌹"], q:"Quelle ville est surnommée la « Ville rose » ?",
+   a:"Toulouse", choices:["Albi","Toulouse","Montauban","Carcassonne"], good:1,
+   note:"Pour la couleur des briques de terre cuite de ses bâtiments anciens, faute de pierre dans la plaine de la Garonne."},
+];
+
 const QUESTIONS = [
   {cat:"hist", sub:"Date", emo:["⚔️","🏰"], q:"En quelle année Philippe le Bel fait-il arrêter, au petit matin d'un vendredi 13 octobre, tous les Templiers du royaume ?",
-   a:"1307", choices:["1291","1307","1314","1328"], good:1,
-   note:"Le vendredi 13 octobre 1307. Le grand maître Jacques de Molay sera brûlé sept ans plus tard, en 1314, sur l'île aux Juifs à Paris."},
+   num:{min:1000,max:1500,step:1,unit:""}, a:1307,
+   note:"Le vendredi 13 octobre 1307. Une légende tenace y voit l'origine de la superstition du vendredi 13, sans preuve historique. Le grand maître Jacques de Molay sera brûlé sept ans plus tard, en 1314, sur l'île aux Juifs à Paris."},
   {cat:"hist", sub:"Personnage", emo:["🎩","🏛️"], q:"Qui fut le premier président de la IIIe République, élu en 1871 ?",
    a:"Adolphe Thiers", choices:["Léon Gambetta","Jules Grévy","Adolphe Thiers","Patrice de Mac Mahon"], good:2,
    note:"Chef du pouvoir exécutif en février 1871, il reçoit le titre de président de la République par la loi Rivet du 31 août 1871. Mac Mahon lui succède en 1873."},
@@ -156,67 +199,75 @@ const QUESTIONS = [
    a:"L'esperluette", choices:["L'obèle","Le pied-de-mouche","L'esperluette","L'octothorpe"], good:2,
    note:"C'est une ligature du latin « et ». L'obèle est le †, le pied-de-mouche le ¶ et l'octothorpe le #. En anglais, le & a longtemps été récité comme 27e lettre de l'alphabet."},
   {cat:"random", sub:"Jeux", emo:["🔠","🎲"], q:"Combien de cases compte un plateau de Scrabble ?",
-   a:"225 cases (15 × 15)", choices:["169","225","256","289"], good:1,
-   note:"15 lignes sur 15 colonnes, dont 61 cases à prime. Le jeu a été inventé en 1938 par l'architecte américain Alfred Butts, au chômage pendant la Grande Dépression."},
+   num:{min:50,max:500,step:1,unit:"cases"}, a:225,
+   note:"Un carré de 15 × 15, dont 61 cases à prime. Le jeu a été inventé en 1938 par l'architecte américain Alfred Butts, au chômage pendant la Grande Dépression."},
 ];
 
-const TIEBREAK = {cat:"sport", sub:"Gymnastique (subsidiaire)", emo:["🤸","🥇"], q:"Combien d'agrès compte la gymnastique artistique masculine aux Jeux olympiques ?",
-   a:"Six agrès", choices:["4","5","6","8"], good:2,
-   note:"Sol, cheval d'arçons, anneaux, saut, barres parallèles, barre fixe. Les femmes en ont quatre : saut, barres asymétriques, poutre, sol."};
+const TIEBREAK = {cat:"sport", sub:"Gymnastique · subsidiaire", emo:["🤸","🔟"], q:"En quelle année Nadia Comaneci obtient-elle le premier 10 parfait de l'histoire de la gymnastique olympique ?",
+   num:{min:1920,max:2020,step:1,unit:""}, a:1976,
+   note:"Aux Jeux de Montréal, aux barres asymétriques, à 14 ans. Le tableau d'affichage, prévu pour 3 chiffres, affiche 1.00 faute de pouvoir écrire 10.00."};
 
-const PTS_OPEN = 2, PTS_MCQ = 1;
+const PTS_OPEN = 2, PTS_MCQ = 1, PTS_NUM = 2, PTS_NUM_TIE = 1;
 
 // ---------- ÉTAT ----------
-const KEY = "trivial-weekend-v1";
+const KEY = "trivial-weekend-v2";
 let S = load() || fresh();
-function fresh(){ return {screen:"intro", names:{A:"Équipe A",B:"Équipe B"}, i:0, phase:"open", results:[], tie:false}; }
+function fresh(){ return {screen:"intro", prev:null, names:{A:"Équipe A",B:"Équipe B"}, warm:0, i:0, phase:null, results:[], tie:false, num:null}; }
 function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); return s && s.screen ? s : null; }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 
-function score(t){ return S.results.reduce((n,r)=> n + (r.team===t ? r.pts : 0), 0); }
-function wedges(t){ const set = new Set(); S.results.forEach((r,k)=>{ if(r.team===t && k<QUESTIONS.length) set.add(QUESTIONS[k].cat); }); return set; }
+function curQ(){ if(S.warm!==null) return WARMUP[S.warm]; return S.tie ? TIEBREAK : QUESTIONS[S.i]; }
+function enterQ(){ const Q = curQ(); S.phase = Q.num ? "num" : "open"; S.num = Q.num ? {A:Q.num.min, B:Q.num.min, lockA:false, lockB:false} : null; }
+function fmt(x,Q){ return String(x) + (Q.num.unit ? " " + Q.num.unit : ""); }
+function ansText(Q){ return Q.num ? fmt(Q.a,Q) : Q.a; }
+function gets(r,t){ return r.team===t || r.team==="both"; }
+function score(t){ return S.results.reduce((n,r)=> n + (gets(r,t) ? r.pts : 0), 0); }
+function wedges(t){ const set = new Set(); S.results.forEach(r=>{ if(gets(r,t) && r.pts>0 && !r.tie) set.add(QUESTIONS[r.i].cat); }); return set; }
 function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800); }
 
 // ---------- RENDU ----------
 const app = document.getElementById("app");
-function render(){ save(); if(S.screen==="intro") renderIntro(); else if(S.screen==="play") renderPlay(); else renderEnd(); window.scrollTo({top:0}); }
+function render(){ save(); ({intro:renderIntro, play:renderPlay, ready:renderReady, end:renderEnd})[S.screen](); window.scrollTo({top:0}); }
 
 function renderIntro(){
   app.className = "intro";
   const cats = Object.entries(CATS).map(([k,c])=>`<span class="cat" style="background:${c.color}">${c.label}</span>`).join("");
   app.innerHTML = `
     <h1>🧀 Trivial du week-end</h1>
-    <p class="muted" style="font-size:18px;margin-bottom:18px">14 questions, 2 équipes, niveau relevé. Personne ne connaît les réponses à l'avance, pas même le maître du jeu.</p>
+    <p class="muted" style="font-size:18px;margin-bottom:18px">2 questions test, puis 14 questions, 2 équipes, niveau relevé. Personne ne connaît les réponses à l'avance, pas même le maître du jeu.</p>
     <div class="card">
       <h2>Comment ça marche</h2>
       <div class="rules">
-        <div class="rule"><div class="ic">1️⃣</div><b>Réponse ouverte : ${PTS_OPEN} points</b><p>La question s'affiche. Si une équipe est sûre d'elle, elle annonce sa réponse à voix haute, puis on dévoile la solution. Juste : ${PTS_OPEN} pts. Faux : 0 et la question est perdue pour elle.</p></div>
-        <div class="rule"><div class="ic">2️⃣</div><b>Personne ne sait : QCM à ${PTS_MCQ} point</b><p>On dévoile 4 propositions. Chaque équipe en choisit une (l'équipe qui s'est trompée en ouvert ne joue pas). On révèle la bonne, on attribue le point.</p></div>
-        <div class="rule"><div class="ic">3️⃣</div><b>Attribution</b><p>Après chaque révélation, le maître du jeu attribue la question à l'équipe A, à l'équipe B ou à personne. Un bouton « Corriger » permet d'annuler.</p></div>
-        <div class="rule"><div class="ic">🤸</div><b>Égalité</b><p>Une question subsidiaire de gymnastique départage les équipes. Les scores sont sauvegardés dans le navigateur : on peut fermer et reprendre.</p></div>
+        <div class="rule"><div class="ic">🧪</div><b>Échauffement</b><p>On commence par 2 questions test qui ne comptent pas : une question à réponse, une question chiffrée. Le temps de comprendre le mécanisme.</p></div>
+        <div class="rule"><div class="ic">💬</div><b>Question à réponse : ${PTS_OPEN} pts puis ${PTS_MCQ} pt</b><p>Une équipe sûre d'elle annonce sa réponse, on dévoile : ${PTS_OPEN} pts si juste. Personne ne sait ? On affiche 4 propositions, chaque équipe choisit une lettre : ${PTS_MCQ} pt.</p></div>
+        <div class="rule"><div class="ic">🎚️</div><b>Question chiffrée : au plus proche</b><p>Date, taille, nombre : chaque équipe règle son curseur à l'abri des regards puis verrouille. On révèle : l'équipe la plus proche prend ${PTS_NUM} pts. Même écart : ${PTS_NUM_TIE} pt chacune.</p></div>
+        <div class="rule"><div class="ic">⚖️</div><b>Attribution et égalité</b><p>Le maître du jeu attribue chaque question (bouton « Corriger » pour annuler). Égalité finale : question subsidiaire chiffrée. Scores sauvegardés dans le navigateur.</p></div>
       </div>
       <h2>Les catégories</h2>
       <div class="cats">${cats}</div>
-      <p class="muted" style="color:#475569;margin-bottom:22px">3 histoire de France · 2 géographie française · 1 géographie du monde · 2 côté jardin · 2 cinéma · 2 sport · 2 random</p>
+      <p style="color:#475569;margin-bottom:22px">3 histoire de France · 2 géographie française · 1 géographie du monde · 2 côté jardin · 2 cinéma · 2 sport · 2 random</p>
       <h2>Qui est qui ?</h2>
       <div class="teams">
         <div class="tin A"><label>Équipe A (bleu)</label><input id="nA" value="${esc(S.names.A)}" placeholder="Nom de l'équipe A"></div>
         <div class="tin B"><label>Équipe B (rouge)</label><input id="nB" value="${esc(S.names.B)}" placeholder="Nom de l'équipe B"></div>
       </div>
       <div class="row">
-        <button class="primary" id="start">C'est parti 🎲</button>
-        ${S.results.length ? `<button class="ghost" id="resume">Reprendre la partie en cours (question ${Math.min(S.i+1,QUESTIONS.length)})</button>` : ""}
+        <button class="primary" id="start">${S.prev ? "Nouvelle partie" : "C'est parti"} 🎲</button>
+        ${S.prev ? `<button class="ghost" id="resume">Reprendre la partie en cours</button>` : ""}
       </div>
     </div>`;
   const readNames = ()=>{ S.names.A = document.getElementById("nA").value.trim() || "Équipe A"; S.names.B = document.getElementById("nB").value.trim() || "Équipe B"; };
-  document.getElementById("start").onclick = ()=>{ readNames(); S.i=0; S.phase="open"; S.results=[]; S.tie=false; S.screen="play"; render(); };
-  const r = document.getElementById("resume"); if(r) r.onclick = ()=>{ readNames(); S.screen = S.i>=QUESTIONS.length && !S.tie ? "end" : "play"; render(); };
+  document.getElementById("start").onclick = ()=>{
+    if(S.prev && S.results.length && !confirm("Effacer la partie en cours et recommencer ?")) return;
+    readNames(); const n = S.names; S = fresh(); S.names = n; S.screen = "play"; S.prev = "play"; enterQ(); render();
+  };
+  const r = document.getElementById("resume"); if(r) r.onclick = ()=>{ readNames(); S.screen = S.prev; render(); };
 }
 
 function scorebar(){
   const w = t => WEDGE_CATS.map(c=>`<span class="wedge ${wedges(t).has(c)?"on":""}" style="background:${CATS[c].color}" title="${CATS[c].label}"></span>`).join("");
-  const label = S.screen==="end" ? "Fin de partie" : S.tie ? "Subsidiaire" : `Question <b>${S.i+1}</b> / ${QUESTIONS.length}`;
+  const label = S.screen==="end" ? "Fin de partie" : S.screen==="ready" ? "Prêts ?" : S.warm!==null ? `Test <b>${S.warm+1}</b> / ${WARMUP.length}` : S.tie ? "Subsidiaire" : `Question <b>${S.i+1}</b> / ${QUESTIONS.length}`;
   return `<div class="scorebar">
     <div class="team A"><div class="pts">${score("A")}</div><div class="grow"><div class="name">${esc(S.names.A)}</div><div class="wedges">${w("A")}</div></div></div>
     <div class="progress">${label}</div>
@@ -224,20 +275,24 @@ function scorebar(){
   </div>`;
 }
 
+function topbar(){
+  return `<div class="topbar"><div class="t">🧀 Trivial du week-end</div><div class="row"><button class="ghost small" data-act="undo" ${S.results.length?"":"disabled"}>↩︎ Corriger la dernière attribution</button><button class="ghost small" data-act="home">Accueil</button></div></div>`;
+}
+
 function renderPlay(){
   app.className = "play";
-  const Q = S.tie ? TIEBREAK : QUESTIONS[S.i];
-  const C = CATS[Q.cat];
-  const ph = S.phase;
-  const stake = (ph==="open"||ph==="open-revealed") ? PTS_OPEN : PTS_MCQ;
-  let body = `<div class="q">${esc(Q.q)}</div>`;
+  const Q = curQ(), C = CATS[Q.cat], ph = S.phase, warm = S.warm!==null;
+  const stake = Q.num ? `${PTS_NUM} pts · au plus proche` : (ph==="open"||ph==="open-revealed") ? `${PTS_OPEN} pts` : `${PTS_MCQ} pt`;
+  let body = "";
+  if(warm) body += `<div class="testbanner">🧪 Question test : elle ne compte pas. ${Q.num ? "C'est une question chiffrée : chaque équipe règle son curseur, verrouille, puis on révèle. La plus proche gagne." : "C'est une question à réponse : une équipe sûre d'elle annonce sa réponse, sinon on passe aux 4 propositions."}</div>`;
+  body += `<div class="q">${esc(Q.q)}</div>`;
 
   if(ph==="open"){
     body += `<div class="hint">Une équipe est sûre d'elle ? Elle annonce sa réponse, puis on dévoile. Sinon, on passe aux 4 propositions.</div>
-      <div class="row"><button class="primary" data-act="reveal-open">Dévoiler la réponse (${PTS_OPEN} pts)</button><button data-act="mcq">Personne ne sait → 4 propositions (${PTS_MCQ} pt)</button></div>`;
+      <div class="row"><button class="primary" data-act="reveal-open">Dévoiler la réponse (${PTS_OPEN} pts)</button><button data-act="mcq">Personne ne sait : 4 propositions (${PTS_MCQ} pt)</button></div>`;
   }
   if(ph==="open-revealed"){
-    body += answerBox(Q) + attribution(PTS_OPEN, "Qui avait la bonne réponse ?") + `<div class="row" style="margin-top:12px"><button class="ghost small" data-act="mcq">Réponse fausse → passer au QCM pour l'autre équipe</button></div>`;
+    body += answerBox(Q) + attribution(PTS_OPEN, "Qui avait la bonne réponse ?") + `<div class="row" style="margin-top:12px"><button class="ghost small" style="color:#334155;border-color:#cbd5e1" data-act="mcq">Réponse fausse : passer au QCM pour l'autre équipe</button></div>`;
   }
   if(ph==="mcq"){
     body += `<div class="hint">Chaque équipe choisit une lettre. Puis on révèle.</div>` + choices(Q,false) + `<div class="row"><button class="primary" data-act="reveal-mcq">Révéler la bonne réponse</button></div>`;
@@ -245,45 +300,116 @@ function renderPlay(){
   if(ph==="mcq-revealed"){
     body += choices(Q,true) + answerBox(Q) + attribution(PTS_MCQ, "Qui avait choisi la bonne lettre ?");
   }
+  if(ph==="num"){
+    const both = S.num.lockA && S.num.lockB;
+    body += `<div class="hint">Chaque équipe règle son curseur pendant que l'autre regarde ailleurs, puis verrouille. Pour être précis : les boutons ± ou taper le nombre.</div>
+      <div class="sliders">${sliderPanel(Q,"A")}${sliderPanel(Q,"B")}</div>
+      <div class="row"><button class="primary" data-act="reveal-num" ${both?"":"disabled"}>${both ? "Révéler la réponse" : "Les deux équipes doivent verrouiller"}</button></div>`;
+  }
+  if(ph==="num-revealed"){
+    const a = Q.a, vA = S.num.A, vB = S.num.B, dA = Math.abs(vA-a), dB = Math.abs(vB-a);
+    const win = dA<dB ? "A" : dB<dA ? "B" : "both";
+    const pct = v => Math.max(0, Math.min(100, (v-Q.num.min)/(Q.num.max-Q.num.min)*100));
+    const verdict = win==="both" ? `🤝 Même écart : ${PTS_NUM_TIE} pt chacune` : `🏆 ${esc(S.names[win])} est la plus proche : +${PTS_NUM}`;
+    body += `<div class="axis"><div class="track"></div>
+        <div class="mk A" style="left:${pct(vA)}%"><span>${esc(fmt(vA,Q))}</span></div>
+        <div class="mk B" style="left:${pct(vB)}%"><span>${esc(fmt(vB,Q))}</span></div>
+        <div class="mk ans" style="left:${pct(a)}%"></div></div>`
+      + answerBox(Q)
+      + `<div class="gaps"><div class="gap A ${win!=="B"?"win":""}">${esc(S.names.A)} : ${esc(fmt(vA,Q))} · écart ${dA}</div><div class="gap B ${win!=="A"?"win":""}">${esc(S.names.B)} : ${esc(fmt(vB,Q))} · écart ${dB}</div></div>
+        <div class="verdict">${verdict}</div>
+        <div class="attr"><div class="row"><button class="primary" data-act="give" data-team="${win}">Valider${warm?" (test, ne compte pas)":""}</button></div>
+        <div class="row" style="margin-top:10px"><span style="color:#64748b;font-weight:700">Corriger à la main :</span><button class="teamA small" data-act="give" data-team="A">${esc(S.names.A)}</button><button class="teamB small" data-act="give" data-team="B">${esc(S.names.B)}</button><button class="none small" data-act="give" data-team="none">Personne</button></div></div>`;
+  }
 
-  app.innerHTML = `
-    <div class="topbar"><div class="t">🧀 Trivial du week-end</div><div class="row"><button class="ghost small" data-act="undo" ${S.results.length?"":"disabled"}>↩︎ Corriger la dernière attribution</button><button class="ghost small" data-act="home">Accueil</button></div></div>
-    ${scorebar()}
+  const badge = warm ? `Question test · ${C.label}` : `${C.label} · ${esc(Q.sub)}`;
+  app.innerHTML = `${topbar()}${scorebar()}
     <div class="card">
-      <div class="hero" style="background:${C.grad}"><span class="badge">${C.label} · ${esc(Q.sub)}</span><span class="stake">${stake} pt${stake>1?"s":""}</span>${Q.emo.map(e=>`<span class="emo">${e}</span>`).join("")}</div>
+      <div class="hero" style="background:${C.grad}"><span class="badge">${badge}</span><span class="stake">${stake}</span>${Q.emo.map(e=>`<span class="emo">${e}</span>`).join("")}</div>
       <div class="body">${body}</div>
     </div>`;
-  app.querySelectorAll("[data-act]").forEach(b=> b.onclick = ()=> act(b.dataset.act, b.dataset.team));
+  bind();
+  if(ph==="num") bindSliders(Q);
 }
 
-function answerBox(Q){ return `<div class="answer"><div class="a">✅ ${esc(Q.a)}</div><div class="n">${esc(Q.note)}</div></div>`; }
+function sliderPanel(Q,t){
+  const locked = S.num["lock"+t], v = S.num[t], n = Q.num, big = n.step*10;
+  if(locked) return `<div class="sl ${t} locked"><div class="h">${esc(S.names[t])}</div><div class="vv">🔒</div><p style="text-align:center;color:#64748b;font-weight:700">Réponse verrouillée</p><div class="row" style="justify-content:center"><button class="ghost small" style="color:#334155;border-color:#cbd5e1" data-act="unlock" data-team="${t}">Déverrouiller</button></div></div>`;
+  return `<div class="sl ${t}"><div class="h">${esc(S.names[t])}</div>
+    <div class="vv" id="vv${t}">${esc(fmt(v,Q))}</div>
+    <input type="range" id="rg${t}" min="${n.min}" max="${n.max}" step="${n.step}" value="${v}">
+    <div class="steps"><button class="stepb" data-t="${t}" data-d="${-big}">−${big}</button><button class="stepb" data-t="${t}" data-d="${-n.step}">−${n.step}</button>
+      <input type="number" id="nb${t}" min="${n.min}" max="${n.max}" step="${n.step}" value="${v}">
+      <button class="stepb" data-t="${t}" data-d="${n.step}">+${n.step}</button><button class="stepb" data-t="${t}" data-d="${big}">+${big}</button></div>
+    <button class="lockb" data-act="lock" data-team="${t}">🔒 Verrouiller</button></div>`;
+}
+
+function bindSliders(Q){
+  const n = Q.num;
+  ["A","B"].forEach(t=>{
+    const rg = document.getElementById("rg"+t); if(!rg) return;
+    const nb = document.getElementById("nb"+t), vv = document.getElementById("vv"+t);
+    const set = x=>{ if(isNaN(x)) x = S.num[t]; x = Math.max(n.min, Math.min(n.max, Math.round(x/n.step)*n.step)); S.num[t]=x; rg.value=x; nb.value=x; vv.textContent=fmt(x,Q); save(); };
+    rg.oninput = ()=>set(+rg.value);
+    nb.onchange = ()=>set(+nb.value);
+    app.querySelectorAll(`.stepb[data-t="${t}"]`).forEach(b=> b.onclick = ()=>set(S.num[t] + (+b.dataset.d)));
+  });
+}
+
+function bind(){ app.querySelectorAll("[data-act]").forEach(b=> b.onclick = ()=> act(b.dataset.act, b.dataset.team)); }
+function answerBox(Q){ return `<div class="answer"><div class="a">✅ ${esc(ansText(Q))}</div><div class="n">${esc(Q.note)}</div></div>`; }
 function choices(Q, revealed){
   return `<div class="choices">${Q.choices.map((c,k)=>`<div class="choice ${revealed ? (k===Q.good?"good":"bad") : ""}"><span class="k">${"ABCD"[k]}</span><span>${esc(c)}</span></div>`).join("")}</div>`;
 }
 function attribution(pts, label){
-  return `<div class="attr"><div class="lab">${label} · ${pts} pt${pts>1?"s":""}</div>
+  const note = S.warm!==null ? " · test, ne compte pas" : "";
+  return `<div class="attr"><div class="lab">${label} · ${pts} pt${pts>1?"s":""}${note}</div>
     <div class="row"><button class="teamA" data-act="give" data-team="A">${esc(S.names.A)}</button><button class="teamB" data-act="give" data-team="B">${esc(S.names.B)}</button><button class="none" data-act="give" data-team="none">Personne</button></div></div>`;
 }
 
 function act(a, team){
-  if(a==="home"){ S.screen="intro"; render(); return; }
+  if(a==="home"){ S.prev = S.screen; S.screen="intro"; render(); return; }
   if(a==="reveal-open"){ S.phase="open-revealed"; render(); return; }
   if(a==="mcq"){ S.phase="mcq"; render(); return; }
   if(a==="reveal-mcq"){ S.phase="mcq-revealed"; render(); return; }
+  if(a==="lock"){ S.num["lock"+team]=true; render(); return; }
+  if(a==="unlock"){ S.num["lock"+team]=false; render(); return; }
+  if(a==="reveal-num"){ if(S.num.lockA && S.num.lockB){ S.phase="num-revealed"; render(); } return; }
   if(a==="undo"){
     const last = S.results.pop();
-    if(last){ if(last.tie){ S.tie=true; } else { S.tie=false; S.i = last.i; } S.phase="open"; S.screen="play"; toast("Attribution annulée"); render(); }
+    if(last){ S.tie = last.tie; if(!last.tie) S.i = last.i; S.warm = null; S.screen="play"; enterQ(); toast("Attribution annulée, on rejoue la question"); render(); }
     return;
   }
   if(a==="give"){
-    const pts = S.phase==="open-revealed" ? PTS_OPEN : PTS_MCQ;
-    S.results.push({i:S.i, tie:S.tie, team, pts: team==="none"?0:pts});
-    toast(team==="none" ? "Personne ne marque" : `+${pts} pour ${S.names[team]}`);
+    let pts = S.phase==="open-revealed" ? PTS_OPEN : S.phase==="mcq-revealed" ? PTS_MCQ : (team==="both" ? PTS_NUM_TIE : PTS_NUM);
+    if(team==="none") pts = 0;
+    const msg = team==="none" ? "Personne ne marque" : team==="both" ? `+${pts} pour chaque équipe` : `+${pts} pour ${S.names[team]}`;
+    if(S.warm!==null){
+      toast("Test : " + msg + " (ne compte pas)");
+      S.warm++;
+      if(S.warm>=WARMUP.length){ S.warm=null; S.screen="ready"; } else enterQ();
+      render(); return;
+    }
+    S.results.push({i:S.i, tie:S.tie, team, pts});
+    toast(msg);
     if(S.tie){ S.tie=false; S.screen="end"; render(); return; }
-    S.i++; S.phase="open";
-    if(S.i>=QUESTIONS.length){ S.screen="end"; }
+    S.i++;
+    if(S.i>=QUESTIONS.length) S.screen="end"; else enterQ();
     render();
   }
+}
+
+function renderReady(){
+  app.className = "end";
+  app.innerHTML = `${scorebar()}
+    <div class="card">
+      <div style="font-size:80px">🎯</div>
+      <div class="winner">Échauffement terminé</div>
+      <p style="font-size:20px;color:#334155">Les scores sont à zéro. Place aux ${QUESTIONS.length} vraies questions.</p>
+      <div class="row" style="justify-content:center;margin-top:22px"><button class="primary" id="go">Lancer la partie 🎲</button><button class="ghost" style="color:#334155;border-color:#cbd5e1" id="rewarm">Refaire les questions test</button></div>
+    </div>`;
+  document.getElementById("go").onclick = ()=>{ S.i=0; S.results=[]; S.screen="play"; enterQ(); render(); };
+  document.getElementById("rewarm").onclick = ()=>{ S.warm=0; S.screen="play"; enterQ(); render(); };
 }
 
 function renderEnd(){
@@ -292,36 +418,35 @@ function renderEnd(){
   const tieResult = S.results.find(r=>r.tie);
   let head;
   if(a===b && !tieResult){
-    head = `<div class="winner">🤝 Égalité ${a} à ${b}</div><p style="color:#475569;font-size:18px">Une question subsidiaire de gymnastique pour départager.</p><div class="row" style="justify-content:center;margin-top:16px"><button class="primary" id="tb">Question subsidiaire 🤸</button></div>`;
+    head = `<div class="winner">🤝 Égalité ${a} à ${b}</div><p style="color:#475569;font-size:18px">Une question subsidiaire chiffrée pour départager : le curseur le plus proche l'emporte.</p><div class="row" style="justify-content:center;margin-top:16px"><button class="primary" id="tb">Question subsidiaire 🤸</button></div>`;
   } else {
-    let win = a>b ? "A" : b>a ? "B" : (tieResult && tieResult.team!=="none" ? tieResult.team : null);
+    const tbWin = tieResult && (tieResult.team==="A"||tieResult.team==="B") ? tieResult.team : null;
+    const win = a>b ? "A" : b>a ? "B" : tbWin;
     head = win
-      ? `<div class="winner" style="color:var(--team${win})">🏆 ${esc(S.names[win])} l'emporte !</div><p style="font-size:22px;font-weight:800">${a} · ${b}</p>${tieResult&&a===b?`<p style="color:#475569">Départagés sur la question subsidiaire.</p>`:""}`
+      ? `<div class="winner" style="color:var(--team${win})">🏆 ${esc(S.names[win])} l'emporte !</div><p style="font-size:22px;font-weight:800">${a} · ${b}</p>${tieResult && tbWin ? `<p style="color:#475569">Départagés sur la question subsidiaire.</p>` : ""}`
       : `<div class="winner">🤝 Égalité parfaite, même sur la subsidiaire</div><p style="font-size:22px;font-weight:800">${a} · ${b}</p><p style="color:#475569">Le maître du jeu tranche. Ou on remet le couvert.</p>`;
   }
-  const recap = S.results.map(r=>{ const Q = r.tie ? TIEBREAK : QUESTIONS[r.i]; const who = r.team==="none" ? "Personne" : `${esc(S.names[r.team])} +${r.pts}`; return `<div><span>${r.tie?"★ Subsidiaire":(r.i+1)+"."} ${esc(CATS[Q.cat].label)} · ${esc(Q.a)}</span><span class="who ${r.team}">${who}</span></div>`; }).join("");
-  app.innerHTML = `
-    ${scorebar()}
+  const recap = S.results.map(r=>{ const Q = r.tie ? TIEBREAK : QUESTIONS[r.i]; const who = r.team==="none" ? "Personne" : r.team==="both" ? `Les deux +${r.pts}` : `${esc(S.names[r.team])} +${r.pts}`; return `<div><span>${r.tie?"★ Subsidiaire":(r.i+1)+"."} ${esc(CATS[Q.cat].label)} · ${esc(ansText(Q))}</span><span class="who ${r.team}">${who}</span></div>`; }).join("");
+  app.innerHTML = `${scorebar()}
     <div class="card">
       <h2>Fin de partie</h2>
       ${head}
       <div class="recap">${recap}</div>
-      <div class="row" style="justify-content:center;margin-top:22px"><button class="ghost" id="undo">↩︎ Corriger la dernière attribution</button><button id="again">Nouvelle partie</button></div>
+      <div class="row" style="justify-content:center;margin-top:22px"><button class="ghost" style="color:#334155;border-color:#cbd5e1" id="undo">↩︎ Corriger la dernière attribution</button><button id="again">Nouvelle partie</button></div>
     </div>`;
-  const tb = document.getElementById("tb"); if(tb) tb.onclick = ()=>{ S.tie=true; S.phase="open"; S.screen="play"; render(); };
-  document.getElementById("again").onclick = ()=>{ if(confirm("Effacer les scores et recommencer ?")){ const n=S.names; S=fresh(); S.names=n; render(); } };
+  const tb = document.getElementById("tb"); if(tb) tb.onclick = ()=>{ S.tie=true; S.screen="play"; enterQ(); render(); };
+  document.getElementById("again").onclick = ()=>{ if(confirm("Effacer les scores et recommencer ?")){ const n=S.names; S=fresh(); S.names=n; S.screen="play"; S.prev="play"; enterQ(); render(); } };
   document.getElementById("undo").onclick = ()=> act("undo");
 }
 
-// raccourcis clavier : Entrée = bouton principal, A / B / N = attribution, flèche gauche = corriger
+// raccourcis clavier : Entrée = bouton principal, A / B / N = attribution (hors champs de saisie)
 document.addEventListener("keydown", e=>{
   if(e.target.tagName==="INPUT") return;
   const k = e.key.toLowerCase();
-  if(k==="enter"){ const b=document.querySelector("button.primary"); if(b) b.click(); }
-  if(S.screen==="play" && (S.phase==="open-revealed"||S.phase==="mcq-revealed")){
+  if(k==="enter"){ const b=document.querySelector("button.primary:not([disabled])"); if(b){ e.preventDefault(); b.click(); } }
+  if(S.screen==="play" && ["open-revealed","mcq-revealed","num-revealed"].includes(S.phase)){
     if(k==="a") act("give","A"); if(k==="b") act("give","B"); if(k==="n") act("give","none");
   }
-  if(k==="arrowleft") act("undo");
 });
 
 render();
