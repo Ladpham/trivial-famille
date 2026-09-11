@@ -151,7 +151,7 @@ const WEDGE_CATS = ["hist","geofr","geoint","jardin","cine","sport","random"];
 // ÉCHAUFFEMENT : 2 questions test qui ne comptent pas
 const WARMUP = [
   {cat:"sport", sub:"Test chiffré", emo:["🚴","🟡"], q:"En quelle année a été couru le tout premier Tour de France ?",
-   num:{min:1850,max:1970,step:1,unit:""}, a:1903,
+   num:{min:0,max:2026,step:1,unit:""}, a:1903,
    note:"Organisé par le journal L'Auto d'Henri Desgrange pour doper ses ventes. 6 étapes, 2 428 km, remporté par Maurice Garin."},
   {cat:"geofr", sub:"Test réponse", emo:["🧱","🌹"], q:"Quelle ville est surnommée la « Ville rose » ?",
    a:"Toulouse", choices:["Albi","Toulouse","Montauban","Carcassonne"], good:1,
@@ -160,7 +160,7 @@ const WARMUP = [
 
 const QUESTIONS = [
   {cat:"hist", sub:"Date", emo:["⚔️","🏰"], q:"En quelle année Philippe le Bel fait-il arrêter, au petit matin d'un vendredi 13 octobre, tous les Templiers du royaume ?",
-   num:{min:1000,max:1500,step:1,unit:""}, a:1307,
+   num:{min:0,max:2026,step:1,unit:""}, a:1307,
    note:"Le vendredi 13 octobre 1307. Une légende tenace y voit l'origine de la superstition du vendredi 13, sans preuve historique. Le grand maître Jacques de Molay sera brûlé sept ans plus tard, en 1314, sur l'île aux Juifs à Paris."},
   {cat:"hist", sub:"Personnage", emo:["🎩","🏛️"], q:"Qui fut le premier président de la IIIe République, élu en 1871 ?",
    a:"Adolphe Thiers", choices:["Léon Gambetta","Jules Grévy","Adolphe Thiers","Patrice de Mac Mahon"], good:2,
@@ -187,7 +187,7 @@ const QUESTIONS = [
    a:"Justine Triet", choices:["Céline Sciamma","Justine Triet","Julia Ducournau","Alice Diop"], good:1,
    note:"Troisième femme palmée de l'histoire, après Jane Campion (1993) et Julia Ducournau (2021). Le film remporte ensuite l'Oscar du meilleur scénario original et le César du meilleur film en 2024."},
   {cat:"cine", sub:"Oscars", emo:["🏆","🎞️"], q:"Combien de nominations aux Oscars 2025 a obtenu Emilia Pérez, la comédie musicale en espagnol de Jacques Audiard ?",
-   num:{min:0,max:25,step:1,unit:"nominations"}, a:13,
+   num:{min:0,max:50,step:1,unit:"nominations"}, a:13,
    note:"Record pour un film non anglophone : le précédent était de 10, pour Tigre et Dragon et Roma. Le film n'en remporte que 2 (Zoe Saldaña en second rôle et la chanson El Mal), sa campagne ayant été plombée par la polémique autour d'anciens tweets de son actrice principale."},
   {cat:"sport", sub:"Football", emo:["⚽","🏆"], q:"Finale de la Ligue des champions 2025 : le PSG écrase l'Inter 5-0. Quel joueur de 19 ans y signe un doublé ?",
    a:"Désiré Doué", choices:["Achraf Hakimi","Désiré Doué","Khvicha Kvaratskhelia","Bradley Barcola"], good:1,
@@ -199,12 +199,12 @@ const QUESTIONS = [
    a:"Une ligature", choices:["Une diphtongue","Une élision","Une ligature","Une apocope"], good:2,
    note:"On dit aussi « e dans l'o ». Autre ligature connue : le « æ » de curriculum vitæ. Et le signe « & » est lui-même une ligature du latin « et »."},
   {cat:"random", sub:"Jeux", emo:["🔠","🎲"], q:"Combien de cases compte un plateau de Scrabble ?",
-   num:{min:50,max:500,step:1,unit:"cases"}, a:225,
+   num:{min:0,max:1000,step:1,unit:"cases"}, a:225,
    note:"Un carré de 15 × 15, dont 61 cases à prime. Le jeu a été inventé en 1938 par l'architecte américain Alfred Butts, au chômage pendant la Grande Dépression."},
 ];
 
 const TIEBREAK = {cat:"sport", sub:"Gymnastique · subsidiaire", emo:["🤸","🔟"], q:"En quelle année Nadia Comaneci obtient-elle le premier 10 parfait de l'histoire de la gymnastique olympique ?",
-   num:{min:1920,max:2020,step:1,unit:""}, a:1976,
+   num:{min:0,max:2026,step:1,unit:""}, a:1976,
    note:"Aux Jeux de Montréal, aux barres asymétriques, à 14 ans. Le tableau d'affichage, prévu pour 3 chiffres, affiche 1.00 faute de pouvoir écrire 10.00."};
 
 const PTS_OPEN = 2, PTS_MCQ = 1, PTS_NUM = 2, PTS_NUM_TIE = 1;
@@ -309,7 +309,9 @@ function renderPlay(){
   if(ph==="num-revealed"){
     const a = Q.a, vA = S.num.A, vB = S.num.B, dA = Math.abs(vA-a), dB = Math.abs(vB-a);
     const win = dA<dB ? "A" : dB<dA ? "B" : "both";
-    const pct = v => Math.max(0, Math.min(100, (v-Q.num.min)/(Q.num.max-Q.num.min)*100));
+    const lo0 = Math.min(vA,vB,a), hi0 = Math.max(vA,vB,a), span = Math.max(hi0-lo0, Q.num.step*10), pad = span*0.12;
+    const lo = lo0 - pad, hi = lo0 + span + pad;
+    const pct = v => Math.max(0, Math.min(100, (v-lo)/(hi-lo)*100));
     const verdict = win==="both" ? `🤝 Même écart : ${PTS_NUM_TIE} pt chacune` : `🏆 ${esc(S.names[win])} est la plus proche : +${PTS_NUM}`;
     body += `<div class="axis"><div class="track"></div>
         <div class="mk A" style="left:${pct(vA)}%"><span>${esc(fmt(vA,Q))}</span></div>
@@ -333,14 +335,15 @@ function renderPlay(){
 }
 
 function sliderPanel(Q,t){
-  const locked = S.num["lock"+t], v = S.num[t], n = Q.num, big = n.step*10;
+  const locked = S.num["lock"+t], v = S.num[t], n = Q.num;
+  const deltas = [1,10,100].map(k=>k*n.step).filter(d=> d===n.step || d <= (n.max-n.min)/2);
   if(locked) return `<div class="sl ${t} locked"><div class="h">${esc(S.names[t])}</div><div class="vv">🔒</div><p style="text-align:center;color:#64748b;font-weight:700">Réponse verrouillée</p><div class="row" style="justify-content:center"><button class="ghost small" style="color:#334155;border-color:#cbd5e1" data-act="unlock" data-team="${t}">Déverrouiller</button></div></div>`;
   return `<div class="sl ${t}"><div class="h">${esc(S.names[t])}</div>
     <div class="vv" id="vv${t}">${esc(fmt(v,Q))}</div>
     <input type="range" id="rg${t}" min="${n.min}" max="${n.max}" step="${n.step}" value="${v}">
-    <div class="steps"><button class="stepb" data-t="${t}" data-d="${-big}">−${big}</button><button class="stepb" data-t="${t}" data-d="${-n.step}">−${n.step}</button>
+    <div class="steps">${deltas.slice().reverse().map(d=>`<button class="stepb" data-t="${t}" data-d="${-d}">−${d}</button>`).join("")}
       <input type="number" id="nb${t}" min="${n.min}" max="${n.max}" step="${n.step}" value="${v}">
-      <button class="stepb" data-t="${t}" data-d="${n.step}">+${n.step}</button><button class="stepb" data-t="${t}" data-d="${big}">+${big}</button></div>
+      ${deltas.map(d=>`<button class="stepb" data-t="${t}" data-d="${d}">+${d}</button>`).join("")}</div>
     <button class="lockb" data-act="lock" data-team="${t}">🔒 Verrouiller</button></div>`;
 }
 
